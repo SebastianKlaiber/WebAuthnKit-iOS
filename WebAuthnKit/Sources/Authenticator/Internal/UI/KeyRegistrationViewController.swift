@@ -22,8 +22,6 @@ class KeyDetailView: UIView, UITextFieldDelegate {
     private let user: PublicKeyCredentialUserEntity
     private let rp:   PublicKeyCredentialRpEntity
     
-    private var keyNameField: UITextField!
-    
     init(
         config: UserConsentUIConfig,
         user: PublicKeyCredentialUserEntity,
@@ -43,17 +41,6 @@ class KeyDetailView: UIView, UITextFieldDelegate {
         fatalError("init(coder:) has not been implemented")
     }
     
-    private func downloadImage(imageView:UIImageView, url: URL) {
-        URLSession.shared.dataTask(with: URLRequest(url: url)) { (data, response, error) in
-            guard let data = data, let _ = response, error == nil else {
-                return
-            }
-            DispatchQueue.main.async(execute: {
-                imageView.image = UIImage(data: data)
-            })
-        }.resume()
-    }
-    
     private func rgbColor(_ rgbValue: UInt) -> UIColor {
         return UIColor(
             red: CGFloat((rgbValue & 0xFF0000) >> 16) / 255.0,
@@ -64,8 +51,6 @@ class KeyDetailView: UIView, UITextFieldDelegate {
     }
     
     private func setup() {
-        
-        //self.backgroundColor = self.rgbColor(0xf0f0f0)
         
         let effect = UIBlurEffect(style: .prominent)
         let backgroundView = UIVisualEffectView(effect: effect)
@@ -104,72 +89,6 @@ class KeyDetailView: UIView, UITextFieldDelegate {
         self.addSubview(titleLabel)
         
         offset = offset + titleHeight + 12
-        
-        let keyNameFieldHeight: CGFloat = 30
-
-        self.keyNameField = UITextField(frame: CGRect.zero)
-        keyNameField.frame = CGRect(
-            x: 20,
-            y: offset,
-            width: viewWidth - 40,
-            height: keyNameFieldHeight
-        )
-        self.keyNameField.borderStyle = .none
-        self.keyNameField.delegate = self
-        self.keyNameField.layer.backgroundColor = UIColor.white.cgColor
-        self.keyNameField.layer.borderColor = self.rgbColor(self.config.borderColor).cgColor
-        self.keyNameField.layer.cornerRadius = 5.0
-        self.keyNameField.text = self.createDefaultKeyName()
-        self.keyNameField.textColor = self.config.fieldTextColor;
-        self.keyNameField.font = UIFont.systemFont(ofSize: 14.0, weight: .medium)
-        self.addSubview(self.keyNameField)
-        
-        offset = offset + keyNameFieldHeight + 18
-        
-        let paddingView = UIView(frame: CGRect(x: 0, y: 0, width: 10, height: keyNameFieldHeight))
-        self.keyNameField.leftView = paddingView
-        self.keyNameField.leftViewMode = .always
-
-        if let iconURLString = self.user.icon {
-            if let iconURL = URL(string: iconURLString) {
-                let userIconframe = CGRect(
-                    x: (viewWidth - userIconSize) / 2,
-                    y: offset,
-                    width:  userIconSize,
-                    height: userIconSize
-                )
-                let userIconView = UIImageView(frame: userIconframe)
-                userIconView.layer.cornerRadius = userIconSize / 2
-                userIconView.clipsToBounds = true
-                self.addSubview(userIconView)
-                self.downloadImage(imageView: userIconView, url: iconURL)
-                
-                if let iconURLString = self.rp.icon {
-                    if let iconURL = URL(string: iconURLString) {
-                        
-                        let rpIconFrame = CGRect(
-                            x: ((viewWidth - userIconSize) / 2) + userIconSize - rpIconSize,
-                            y: offset + userIconSize - rpIconSize,
-                            width:  rpIconSize,
-                            height: rpIconSize
-                        )
-                        
-                        let rpIconView = UIImageView(frame: rpIconFrame)
-                        rpIconView.layer.cornerRadius = rpIconSize / 2.0
-                        rpIconView.clipsToBounds = true
-                        self.addSubview(rpIconView)
-                        self.downloadImage(imageView: rpIconView, url: iconURL)
-                        
-                    } else {
-                        WAKLogger.debug("<KeyDetailView> rp.icon is not a valid URL: \(iconURLString)")
-                    }
-                }
-                
-                offset = offset + userIconSize + 14
-            } else {
-                WAKLogger.debug("<KeyDetailView> user.icon is not a valid URL: \(iconURLString)")
-            }
-        }
 
         let displayNameHeight: CGFloat = 20
         let displayNameLabel = UILabel(frame: CGRect.zero)
@@ -276,11 +195,7 @@ class KeyDetailView: UIView, UITextFieldDelegate {
     }
     
     private func getCurrentKeyName() -> String {
-        if let keyName = self.keyNameField.text {
-            return keyName.isEmpty ? self.createDefaultKeyName() : keyName
-        } else {
-            return self.createDefaultKeyName()
-        }
+        return self.createDefaultKeyName()
     }
     
     @objc func onCancelButtonTapped(_ sender: UIButton) {
@@ -294,7 +209,6 @@ class KeyDetailView: UIView, UITextFieldDelegate {
     }
     
     func resignKeyNameField() {
-        self.keyNameField.resignFirstResponder()
     }
 
     override public func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
